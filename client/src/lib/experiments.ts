@@ -578,328 +578,229 @@ ${FINISH_SCRIPT}
 }
 
 // ─────────────────────────────────────────────────────────────────────────
-// 8. REVERSE HANGMAN
-//    Classic hangman flipped: YOU give letters to HIDE a word from the AI.
-//    The AI uses a simple frequency-based guessing strategy. You win if the
-//    AI exhausts all 6 guesses without finding the word. Measures strategic
-//    deception, theory of mind, and adversarial reasoning.
+// 8. RESCUE HANGMAN (formerly "Reverse Hangman")
+//    A rescue-framed hangman: each WRONG letter guess = one person NOT saved.
+//    The participant guesses letters to reveal a hidden psychology word.
+//    Correct guesses save people; wrong guesses add to the "unsaved" count.
+//    Score = total people NOT saved across all rounds.
+//    Measures: vocabulary, letter-frequency reasoning, and risk tolerance.
 // ─────────────────────────────────────────────────────────────────────────
 export function buildReverseHangmanHTML(): string {
   return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
 ${BASE_STYLES}
-<script src="${PLUGIN_CDN}/plugin-html-button-response@1.2.0"></script>
-<script src="${PLUGIN_CDN}/plugin-html-keyboard-response@1.1.3"></script>
-<script src="${PLUGIN_CDN}/plugin-instructions@1.1.4"></script>
 <style>
-  .rh-board{max-width:600px;margin:0 auto;padding:16px;}
-  .rh-word{display:flex;justify-content:center;gap:10px;margin:24px 0;}
+  .rh-board{max-width:600px;margin:0 auto;padding:16px 20px;}
+  .rh-word{display:flex;justify-content:center;gap:10px;margin:20px 0;}
   .rh-letter{width:44px;height:52px;border-bottom:3px solid #C9922A;display:flex;align-items:center;justify-content:center;font-size:28px;font-family:'Lora',serif;color:#FDFAF5;font-weight:600;}
-  .rh-letter.revealed{color:#FF5252;border-color:#FF5252;}
-  .rh-letter.hidden{color:#4CAF50;}
-  .rh-gallows{text-align:center;margin:16px 0;font-size:13px;color:#888;font-family:'JetBrains Mono',monospace;line-height:1.5;}
+  .rh-letter.revealed{color:#4CAF50;border-color:#4CAF50;}
   .rh-alpha{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:16px 0;}
   .rh-btn{width:38px;height:38px;border-radius:6px;border:1px solid rgba(201,146,42,0.35);background:rgba(201,146,42,0.08);color:#E8B84B;font-size:15px;font-weight:600;cursor:pointer;font-family:'JetBrains Mono',monospace;transition:all 0.15s;}
   .rh-btn:hover:not(:disabled){background:rgba(201,146,42,0.2);}
   .rh-btn:disabled{opacity:0.25;cursor:not-allowed;}
-  .rh-btn.used-safe{background:rgba(76,175,80,0.15);border-color:#4CAF50;color:#4CAF50;}
-  .rh-btn.used-hit{background:rgba(255,82,82,0.15);border-color:#FF5252;color:#FF5252;}
-  .rh-status{text-align:center;padding:10px;border-radius:8px;margin:12px 0;font-size:14px;}
-  .rh-ai-think{background:rgba(33,150,243,0.1);border:1px solid rgba(33,150,243,0.3);color:#64B5F6;padding:10px 16px;border-radius:8px;font-size:13px;margin:8px 0;font-family:'JetBrains Mono',monospace;}
-  .rh-score{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin:16px 0;}
+  .rh-btn.correct{background:rgba(76,175,80,0.18);border-color:#4CAF50;color:#4CAF50;}
+  .rh-btn.wrong{background:rgba(255,82,82,0.15);border-color:#FF5252;color:#FF5252;}
+  .rh-score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;}
   .rh-score-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:10px;text-align:center;}
-  .rh-score-val{font-size:24px;font-weight:bold;font-family:'Lora',serif;}
-  .rh-score-lbl{font-size:11px;color:#888;margin-top:2px;}
-  .progress-bar{height:6px;border-radius:3px;background:rgba(255,255,255,0.08);overflow:hidden;margin:8px 0;}
-  .progress-fill{height:100%;border-radius:3px;transition:width 0.4s;}
+  .rh-score-val{font-size:26px;font-weight:bold;font-family:'Lora',serif;}
+  .rh-score-lbl{font-size:11px;color:#888;margin-top:2px;font-family:'DM Sans',sans-serif;}
+  .rh-people-row{display:flex;flex-wrap:wrap;justify-content:center;gap:6px;margin:14px 0;}
+  .rh-person{font-size:22px;transition:all 0.3s;}
+  .rh-person.lost{filter:grayscale(1);opacity:0.3;transform:scale(0.85);}
+  .rh-hint{font-size:12px;color:#888;text-align:center;font-family:'DM Sans',sans-serif;margin-bottom:4px;}
+  .rh-round-result{border-radius:10px;padding:14px 18px;margin:12px 0;font-size:14px;font-family:'DM Sans',sans-serif;line-height:1.7;}
+  .rh-round-result.good{background:rgba(76,175,80,0.1);border:1px solid #4CAF50;color:#81C784;}
+  .rh-round-result.bad{background:rgba(255,82,82,0.1);border:1px solid #FF5252;color:#EF9A9A;}
+  .rh-next-btn{display:block;margin:14px auto 0;background:#C9922A!important;color:#1B2A4A!important;border:none!important;padding:10px 28px!important;border-radius:6px!important;font-weight:600!important;font-size:14px!important;cursor:pointer!important;font-family:'DM Sans',sans-serif!important;}
+  .rh-progress{display:flex;gap:6px;justify-content:center;margin:8px 0;}
+  .rh-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.15);}
+  .rh-dot.done-good{background:#4CAF50;}
+  .rh-dot.done-bad{background:#FF5252;}
+  .rh-dot.current{background:#C9922A;box-shadow:0 0 6px #C9922A;}
 </style>
 </head><body><div id="app"></div>
 <script>
 ${FINISH_SCRIPT}
 
-// ── Word bank (psychology-themed) ─────────────────────────────────────
 const WORD_BANK = [
-  {word:'MEMORY',hint:'Cognitive process'},
-  {word:'REFLEX',hint:'Automatic response'},
-  {word:'CORTEX',hint:'Brain region'},
-  {word:'SCHEMA',hint:'Mental framework'},
-  {word:'PHOBIA',hint:'Anxiety disorder'},
-  {word:'NEURON',hint:'Brain cell'},
-  {word:'AFFECT',hint:'Emotional state'},
-  {word:'RECALL',hint:'Memory retrieval'},
-  {word:'SIGNAL',hint:'Neural message'},
-  {word:'TRAUMA',hint:'Psychological wound'},
-  {word:'EMPATHY',hint:'Feeling others\\'emotions'},
-  {word:'PLACEBO',hint:'Inert treatment'},
-  {word:'ANXIETY',hint:'Worry disorder'},
-  {word:'PRIMING',hint:'Implicit memory effect'},
-  {word:'INSIGHT',hint:'Sudden understanding'},
+  {word:'MEMORY',hint:'Cognitive process — storing and retrieving information'},
+  {word:'REFLEX',hint:'Automatic involuntary response to a stimulus'},
+  {word:'CORTEX',hint:'Outer layer of the brain'},
+  {word:'SCHEMA',hint:'Mental framework for organising knowledge'},
+  {word:'PHOBIA',hint:'Intense irrational fear of something'},
+  {word:'NEURON',hint:'The basic cell of the nervous system'},
+  {word:'AFFECT',hint:'Outward expression of emotional state'},
+  {word:'RECALL',hint:'Retrieving information from long-term memory'},
+  {word:'TRAUMA',hint:'Deeply distressing psychological experience'},
+  {word:'EMPATHY',hint:'Ability to understand another person\'s feelings'},
+  {word:'PLACEBO',hint:'Inert treatment that produces real effects via belief'},
+  {word:'ANXIETY',hint:'Persistent worry and apprehension'},
+  {word:'PRIMING',hint:'Exposure to one stimulus influences response to another'},
+  {word:'INSIGHT',hint:'Sudden realisation of a solution'},
+  {word:'COGNITION',hint:'Mental processes of knowing and understanding'},
+  {word:'SYNAPSE',hint:'Gap between two neurons'},
+  {word:'DOPAMINE',hint:'Neurotransmitter linked to reward and motivation'},
+  {word:'SEROTONIN',hint:'Neurotransmitter linked to mood regulation'},
+  {word:'INHIBITION',hint:'Suppressing a thought, impulse, or response'},
+  {word:'PERCEPTION',hint:'Interpreting sensory information'},
 ];
 
-// ── AI Guesser: frequency-based with memory ──────────────────────────
-// Builds a letter frequency model from the word bank filtered by
-// known constraints (length, confirmed positions, excluded letters).
-function aiNextGuess(wordLen, revealed, excluded, guessHistory) {
-  // Filter candidate words
-  const candidates = WORD_BANK.map(w=>w.word).filter(w => {
-    if (w.length !== wordLen) return false;
-    for (let i=0;i<wordLen;i++) {
-      if (revealed[i] && w[i] !== revealed[i]) return false;
-    }
-    for (const ex of excluded) {
-      if (w.includes(ex)) return false;
-    }
-    return true;
-  });
+const NUM_ROUNDS = 5;
+const MAX_WRONG = 6; // 6 people at risk per round
 
-  // Count letter frequencies in candidates (only unguessed letters)
-  const freq = {};
-  const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-  for (const letter of allLetters) {
-    if (guessHistory.includes(letter)) continue;
-    freq[letter] = 0;
-  }
-  for (const w of candidates) {
-    for (const ch of new Set(w.split(''))) {
-      if (!guessHistory.includes(ch) && freq[ch] !== undefined) freq[ch]++;
-    }
-  }
-
-  // If no candidates, fall back to English letter frequency
-  const fallback = 'ETAOINSHRDLCUMWFGYPBVKJXQZ'.split('');
-  let best = null, bestScore = -1;
-  for (const [letter, score] of Object.entries(freq)) {
-    if ((score) > bestScore) { bestScore = score; best = letter; }
-  }
-  if (!best) {
-    for (const l of fallback) {
-      if (!guessHistory.includes(l)) { best = l; break; }
-    }
-  }
-  return best || 'E';
-}
-
-// ── Game State ────────────────────────────────────────────────────────
-const MAX_GUESSES = 6;
-const GALLOWS_STAGES = [
-  \`  +---+
-  |   |
-      |
-      |
-      |
-      |
-=========\`,
-  \`  +---+
-  |   |
-  O   |
-      |
-      |
-      |
-=========\`,
-  \`  +---+
-  |   |
-  O   |
-  |   |
-      |
-      |
-=========\`,
-  \`  +---+
-  |   |
-  O   |
- /|   |
-      |
-      |
-=========\`,
-  \`  +---+
-  |   |
-  O   |
- /|\\\\  |
-      |
-      |
-=========\`,
-  \`  +---+
-  |   |
-  O   |
- /|\\\\  |
- /    |
-      |
-=========\`,
-  \`  +---+
-  |   |
-  O   |
- /|\\\\  |
- / \\\\  |
-      |
-=========\`,
-];
-
-let state = {
-  round: 0,
-  scores: {player:0, ai:0, draws:0},
-  history: [],
-};
+let roundIndex = 0;
+let totalUnsaved = 0;
+let totalSaved = 0;
+let history = [];
+let usedWords = new Set();
 
 function pickWord() {
-  return WORD_BANK[Math.floor(Math.random() * WORD_BANK.length)];
+  const available = WORD_BANK.filter(w => !usedWords.has(w.word));
+  const pick = available[Math.floor(Math.random() * available.length)];
+  usedWords.add(pick.word);
+  return pick;
+}
+
+function renderProgress(doneResults) {
+  return Array.from({length: NUM_ROUNDS}, (_, i) => {
+    let cls = 'rh-dot';
+    if (i < doneResults.length) {
+      cls += doneResults[i].wrong === 0 ? ' done-good' : doneResults[i].wrong < MAX_WRONG ? ' done-good' : ' done-bad';
+    } else if (i === roundIndex) cls += ' current';
+    return '<div class="' + cls + '"></div>';
+  }).join('');
+}
+
+function renderPeople(wrongCount) {
+  return Array.from({length: MAX_WRONG}, (_, i) =>
+    '<div class="rh-person' + (i < wrongCount ? ' lost' : '') + '">' +
+    (i < wrongCount ? '💀' : '🧍') + '</div>'
+  ).join('');
 }
 
 function startRound() {
-  const entry = pickWord();
-  const word = entry.word;
-  const revealed = new Array(word.length).fill(null);
-  const excluded = [];
-  const guessHistory = [];
-  let guessCount = 0;
-  let playerLetters = []; // letters player has chosen to give
+  const {word, hint} = pickWord();
+  const letters = word.split('');
+  const guessed = new Set();
+  let wrongCount = 0;
+  let solved = false;
 
-  render();
-
-  function render() {
-    const app = document.getElementById('app');
-    const aiGuessedCorrectly = revealed.every(l => l !== null);
-    const aiLost = guessCount >= MAX_GUESSES && !aiGuessedCorrectly;
-    const gameOver = aiGuessedCorrectly || aiLost;
-
-    const wordHtml = word.split('').map((ch, i) => {
-      const cls = revealed[i] ? 'rh-letter revealed' : 'rh-letter hidden';
-      return \`<div class="\${cls}">\${revealed[i] || (gameOver ? ch : '_')}</div>\`;
-    }).join('');
-
-    const alphaHtml = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(l => {
-      let cls = 'rh-btn';
-      const isUsed = playerLetters.includes(l);
-      const isHit = isUsed && word.includes(l);
-      if (isHit) cls += ' used-hit';
-      else if (isUsed) cls += ' used-safe';
-      const disabled = isUsed || gameOver ? 'disabled' : '';
-      return \`<button class="\${cls}" \${disabled} onclick="giveLetterToAI('\${l}')">\${l}</button>\`;
-    }).join('');
-
-    const aiLastGuess = guessHistory[guessHistory.length - 1];
-    const aiHit = aiLastGuess && word.includes(aiLastGuess);
-
-    let statusHtml = '';
-    if (gameOver) {
-      if (aiLost) {
-        statusHtml = \`<div class="rh-status" style="background:rgba(76,175,80,0.15);border:1px solid #4CAF50;color:#4CAF50">
-          🎉 You won! The AI failed to guess <strong>\${word}</strong> in \${MAX_GUESSES} tries.
-        </div>\`;
-      } else {
-        statusHtml = \`<div class="rh-status" style="background:rgba(255,82,82,0.15);border:1px solid #FF5252;color:#FF5252">
-          🤖 AI wins! It guessed <strong>\${word}</strong> with \${MAX_GUESSES - guessCount + (guessCount < MAX_GUESSES ? 1 : 0)} guesses remaining.
-        </div>\`;
-      }
-    }
-
-    const aiThinkHtml = aiLastGuess ? \`<div class="rh-ai-think">
-      🤖 AI guessed: <strong>\${aiLastGuess}</strong> — \${aiHit ? '✓ HIT (letter revealed!)' : '✗ MISS'}
-      &nbsp;|&nbsp; Guesses used: \${guessCount}/\${MAX_GUESSES}
-    </div>\` : '<div class="rh-ai-think">🤖 AI is waiting for your first letter...</div>';
-
-    const progressPct = (guessCount / MAX_GUESSES) * 100;
-    const progressColor = guessCount < 3 ? '#4CAF50' : guessCount < 5 ? '#FF9800' : '#FF5252';
-
-    app.innerHTML = \`
-    <div class="rh-board">
-      <div class="center" style="margin-bottom:8px">
-        <span style="font-size:11px;color:#888;font-family:'JetBrains Mono',monospace">ROUND \${state.round + 1} &nbsp;|&nbsp; HINT: \${entry.hint} &nbsp;|&nbsp; \${word.length} letters</span>
-      </div>
-      <div class="rh-score">
-        <div class="rh-score-card"><div class="rh-score-val" style="color:#4CAF50">\${state.scores.player}</div><div class="rh-score-lbl">You Win</div></div>
-        <div class="rh-score-card"><div class="rh-score-val" style="color:#FF5252">\${state.scores.ai}</div><div class="rh-score-lbl">AI Wins</div></div>
-        <div class="rh-score-card"><div class="rh-score-val" style="color:#888">\${state.scores.draws}</div><div class="rh-score-lbl">Draws</div></div>
-      </div>
-      <div class="rh-gallows"><pre style="display:inline-block;text-align:left;color:#C9922A;font-size:12px">\${GALLOWS_STAGES[guessCount]}</pre></div>
-      <div class="progress-bar"><div class="progress-fill" style="width:\${progressPct}%;background:\${progressColor}"></div></div>
-      <p style="text-align:center;font-size:12px;color:#888;margin:0 0 8px">\${guessCount}/\${MAX_GUESSES} AI guesses used</p>
-      <div class="rh-word">\${wordHtml}</div>
-      \${aiThinkHtml}
-      \${statusHtml}
-      \${!gameOver ? \`
-        <p style="text-align:center;color:#ccc;font-size:13px;margin:12px 0 8px">
-          Choose a letter to <strong class="gold">give to the AI</strong>. Safe letters (not in word) waste its guesses. Risky letters reveal the word!
-        </p>
-        <div class="rh-alpha">\${alphaHtml}</div>
-      \` : \`
-        <div style="text-align:center;margin-top:16px;display:flex;gap:10px;justify-content:center">
-          <button class="jspsych-btn" onclick="nextRound()">Next Round →</button>
-          <button class="jspsych-btn" style="background:#1B2A4A!important;color:#E8B84B!important;border:1px solid #C9922A!important" onclick="finishGame()">Finish & See Data</button>
-        </div>
-      \`}
-    </div>\`;
+  function isComplete() {
+    return letters.every(l => guessed.has(l));
   }
 
-  window.giveLetterToAI = function(letter) {
-    if (playerLetters.includes(letter)) return;
-    playerLetters.push(letter);
+  function renderBoard() {
+    const app = document.getElementById('app');
+    const done = solved || wrongCount >= MAX_WRONG;
 
-    // AI receives the letter and "guesses" it
-    guessHistory.push(letter);
-    guessCount++;
+    const wordHTML = letters.map(l =>
+      '<div class="rh-letter' + (guessed.has(l) ? ' revealed' : '') + '">' +
+      (guessed.has(l) ? l : '_') + '</div>'
+    ).join('');
 
-    // Check if letter is in word
-    if (word.includes(letter)) {
-      // Reveal all positions
-      for (let i = 0; i < word.length; i++) {
-        if (word[i] === letter) revealed[i] = letter;
+    const alphaHTML = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('').map(l => {
+      let cls = 'rh-btn';
+      if (guessed.has(l)) cls += letters.includes(l) ? ' correct' : ' wrong';
+      return '<button class="' + cls + '" ' +
+        (guessed.has(l) || done ? 'disabled' : '') +
+        ' onclick="guess(\'' + l + '\')">' + l + '</button>';
+    }).join('');
+
+    let resultHTML = '';
+    if (done) {
+      const saved = MAX_WRONG - wrongCount;
+      if (solved) {
+        resultHTML = '<div class="rh-round-result good">✅ Word revealed! <strong>' + saved + ' of ' + MAX_WRONG + ' people saved</strong> this round. ' + wrongCount + ' wrong guess' + (wrongCount !== 1 ? 'es' : '') + ' — ' + wrongCount + ' person' + (wrongCount !== 1 ? 's' : '') + ' could not be rescued.</div>';
+      } else {
+        resultHTML = '<div class="rh-round-result bad">❌ Out of chances. The word was <strong>' + word + '</strong>. All ' + MAX_WRONG + ' people on this round were not saved.</div>';
       }
-    } else {
-      excluded.push(letter);
     }
 
-    // Record trial data
-    state.history.push({
-      round: state.round + 1,
-      word,
-      letter_given: letter,
-      is_in_word: word.includes(letter),
-      guess_number: guessCount,
-      revealed_so_far: revealed.filter(Boolean).length,
-      word_length: word.length,
-      task: 'reverse_hangman',
-    });
+    app.innerHTML =
+      '<div class="rh-board">' +
+      '<div style="text-align:center;margin-bottom:4px"><span style="font-size:11px;color:#888;font-family:JetBrains Mono,monospace">ROUND ' + (roundIndex+1) + ' OF ' + NUM_ROUNDS + ' &nbsp;|&nbsp; RESCUE HANGMAN</span></div>' +
+      '<div class="rh-progress">' + renderProgress(history) + '</div>' +
+      '<div style="text-align:center;margin:10px 0 4px">' +
+      '<div style="font-size:32px">🚨</div>' +
+      '<h2 style="margin:4px 0 2px">Rescue the People</h2>' +
+      '<p style="color:#aaa;font-size:13px;font-family:DM Sans,sans-serif;margin:0">Guess the hidden psychology word. Each wrong letter = one person <strong style="color:#FF5252">not saved</strong>.</p>' +
+      '</div>' +
+      '<div class="rh-hint">' + hint + '</div>' +
+      '<div class="rh-word">' + wordHTML + '</div>' +
+      '<div class="rh-people-row">' + renderPeople(wrongCount) + '</div>' +
+      '<div style="text-align:center;margin:4px 0 8px">' +
+      '<span style="font-size:13px;color:#FF5252;font-family:JetBrains Mono,monospace">Not saved: ' + wrongCount + ' / ' + MAX_WRONG + '</span>' +
+      '</div>' +
+      '<div class="rh-score-grid">' +
+      '<div class="rh-score-card"><div class="rh-score-val" style="color:#4CAF50">' + totalSaved + '</div><div class="rh-score-lbl">Total Saved</div></div>' +
+      '<div class="rh-score-card"><div class="rh-score-val" style="color:#FF5252">' + totalUnsaved + '</div><div class="rh-score-lbl">Total Unsaved</div></div>' +
+      '<div class="rh-score-card"><div class="rh-score-val" style="color:#E8B84B">' + (roundIndex+1) + '/' + NUM_ROUNDS + '</div><div class="rh-score-lbl">Round</div></div>' +
+      '</div>' +
+      (done ? '' : '<div class="rh-alpha">' + alphaHTML + '</div>') +
+      resultHTML +
+      (done ? (
+        roundIndex + 1 < NUM_ROUNDS
+          ? '<button class="rh-next-btn" onclick="nextRound()">Next Round →</button>'
+          : '<button class="rh-next-btn" onclick="showFinal()">See Final Results →</button>'
+      ) : '<div class="rh-alpha">' + alphaHTML + '</div>') +
+      '</div>';
+  }
 
-    render();
+  window.guess = function(letter) {
+    if (guessed.has(letter) || solved || wrongCount >= MAX_WRONG) return;
+    guessed.add(letter);
+    if (!letters.includes(letter)) {
+      wrongCount++;
+    }
+    solved = isComplete();
+    if (solved || wrongCount >= MAX_WRONG) {
+      const savedThisRound = MAX_WRONG - wrongCount;
+      totalSaved += savedThisRound;
+      totalUnsaved += wrongCount;
+      history.push({
+        round: roundIndex + 1,
+        word,
+        wrong: wrongCount,
+        saved: savedThisRound,
+        guessed: Array.from(guessed).join(''),
+        solved,
+        task: 'rescue_hangman',
+      });
+    }
+    renderBoard();
   };
 
-  window.nextRound = function() {
-    // Tally score
-    const aiGuessedCorrectly = revealed.every(l => l !== null);
-    if (aiGuessedCorrectly) state.scores.ai++;
-    else if (guessCount >= MAX_GUESSES) state.scores.player++;
-    else state.scores.draws++;
-    state.round++;
-    startRound();
-  };
-
-  window.finishGame = function() {
-    const aiGuessedCorrectly = revealed.every(l => l !== null);
-    if (aiGuessedCorrectly) state.scores.ai++;
-    else if (guessCount >= MAX_GUESSES) state.scores.player++;
-    else state.scores.draws++;
-
-    const app = document.getElementById('app');
-    app.innerHTML = \`
-    <div class="rh-board center">
-      <div style="font-size:48px;margin-bottom:12px">🎭</div>
-      <h2>Experiment Complete</h2>
-      <div class="rh-score" style="max-width:360px;margin:16px auto">
-        <div class="rh-score-card"><div class="rh-score-val" style="color:#4CAF50">\${state.scores.player}</div><div class="rh-score-lbl">Your Wins</div></div>
-        <div class="rh-score-card"><div class="rh-score-val" style="color:#FF5252">\${state.scores.ai}</div><div class="rh-score-lbl">AI Wins</div></div>
-        <div class="rh-score-card"><div class="rh-score-val" style="color:#888">\${state.scores.draws}</div><div class="rh-score-lbl">Draws</div></div>
-      </div>
-      <p style="color:#ccc;font-size:14px;line-height:1.7;max-width:440px;margin:0 auto 20px">
-        You played \${state.round} round(s). Strategic letter selection — giving low-frequency letters — is the key to defeating the AI guesser.
-      </p>
-      <button class="jspsych-btn" onclick="sendResults()">View Data →</button>
-    </div>\`;
-  };
-
-  window.sendResults = function() {
-    window.parent.postMessage({type:'jspsych-done', data: state.history}, '*');
-  };
+  renderBoard();
 }
 
-// Start first round
+window.nextRound = function() {
+  roundIndex++;
+  startRound();
+};
+
+window.showFinal = function() {
+  const app = document.getElementById('app');
+  const pct = Math.round((totalSaved / (NUM_ROUNDS * MAX_WRONG)) * 100);
+  app.innerHTML =
+    '<div class="rh-board" style="text-align:center">' +
+    '<div style="font-size:48px;margin-bottom:10px">🚨</div>' +
+    '<h2>Rescue Mission Complete</h2>' +
+    '<p style="color:#aaa;font-size:14px;line-height:1.7;max-width:440px;margin:0 auto 16px;font-family:DM Sans,sans-serif">' +
+    'Across ' + NUM_ROUNDS + ' rounds you attempted to rescue ' + (NUM_ROUNDS * MAX_WRONG) + ' people by guessing hidden psychology words.' +
+    '</p>' +
+    '<div class="rh-score-grid" style="max-width:440px;margin:0 auto 16px">' +
+    '<div class="rh-score-card"><div class="rh-score-val" style="color:#4CAF50">' + totalSaved + '</div><div class="rh-score-lbl">People Saved</div></div>' +
+    '<div class="rh-score-card"><div class="rh-score-val" style="color:#FF5252">' + totalUnsaved + '</div><div class="rh-score-lbl">Not Saved</div></div>' +
+    '<div class="rh-score-card"><div class="rh-score-val" style="color:#E8B84B">' + pct + '%</div><div class="rh-score-lbl">Rescue Rate</div></div>' +
+    '</div>' +
+    '<p style="font-size:13px;color:#aaa;max-width:440px;margin:0 auto 16px;line-height:1.7;font-family:DM Sans,sans-serif">' +
+    (pct >= 80 ? '🏅 Excellent rescue rate. Your vocabulary and letter-frequency intuition are strong.' :
+     pct >= 50 ? '👍 Decent performance. A few more correct guesses would have saved more people.' :
+     '⚠️ Many people were not saved. Focusing on common vowels first (A, E, I, O, U) tends to improve rescue rates.') +
+    '</p>' +
+    '<button class="jspsych-btn" onclick="window.parent.postMessage({type:\'jspsych-done\',data:history},\'*\')">View Trial Data →</button>' +
+    '</div>';
+};
+
 startRound();
 </script></body></html>`;
 }

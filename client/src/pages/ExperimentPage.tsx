@@ -48,7 +48,7 @@ const EXPERIMENTS: ExperimentMeta[] = [
   { id: "nback", label: "2-Back Memory", icon: "🧠", desc: "Working memory capacity", plugin: "html-keyboard-response", color: "#9C27B0", category: "Cognitive" },
   { id: "phantom", label: "Phantom Limb / RHI", icon: "🖐️", desc: "Rubber Hand Illusion & body ownership", plugin: "survey-likert + button-response", color: "#E91E63", category: "Perception" },
   { id: "turing", label: "Turing Test", icon: "🤖", desc: "Human vs. AI response discrimination", plugin: "html-button-response", color: "#2196F3", category: "AI & Cognition" },
-  { id: "reverse-hangman", label: "Reverse Hangman", icon: "🎭", desc: "Give letters to confuse the AI guesser", plugin: "custom DOM + strategy", color: "#FF5722", category: "AI & Cognition" },
+  { id: "reverse-hangman", label: "Rescue Hangman", icon: "🚨", desc: "Guess the word — each wrong letter = one person not saved", plugin: "custom DOM + vocabulary", color: "#FF5722", category: "Cognitive" },
   { id: "survey", label: "Psychology Survey", icon: "📋", desc: "Likert scales + multiple choice", plugin: "survey-likert + survey-multi-choice", color: "#C9922A", category: "Survey" },
   { id: "reverse-trolley", label: "Reverse Trolley", icon: "🚃", desc: "Design a moral dilemma, then face it yourself", plugin: "custom DOM + moral reasoning", color: "#7C4DFF", category: "Reasoning" },
 ];
