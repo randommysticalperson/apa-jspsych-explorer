@@ -1221,3 +1221,417 @@ function showResults() {
 renderProblem();
 </script></body></html>`;
 }
+
+// ─────────────────────────────────────────────────────────────────────────
+// 10. REVERSE TROLLEY PROBLEM
+//     Classic trolley problem — but reversed. Instead of deciding whether
+//     to pull the lever, YOU are the moral architect: you set the parameters
+//     of the dilemma (number of people on each track, relationship to you,
+//     action vs. inaction framing) and then justify your design.
+//     The experiment then shows you the same dilemma and asks: would YOU
+//     pull the lever on the scenario YOU just built?
+//     Measures: moral consistency, self-serving bias in dilemma design,
+//     utilitarian vs. deontological reasoning, and the "designer's curse."
+// ─────────────────────────────────────────────────────────────────────────
+export function buildReverseTrolleyHTML(): string {
+  return `<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"/>
+${BASE_STYLES}
+<script src="${PLUGIN_CDN}/plugin-html-button-response@1.2.0"></script>
+<script src="${PLUGIN_CDN}/plugin-survey-likert@1.1.3"></script>
+<script src="${PLUGIN_CDN}/plugin-instructions@1.1.4"></script>
+<style>
+  .rt-container{max-width:680px;margin:0 auto;padding:16px 20px;}
+  .rt-track-diagram{position:relative;width:100%;max-width:560px;margin:0 auto 20px;}
+  .rt-track-svg{width:100%;height:auto;}
+  .rt-panel{background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);border-radius:12px;padding:18px;margin:12px 0;}
+  .rt-panel h4{font-family:'Lora',serif;color:#E8B84B;margin:0 0 10px;font-size:16px;}
+  .rt-slider-row{display:flex;align-items:center;gap:12px;margin:10px 0;}
+  .rt-slider-row label{font-size:13px;color:#ccc;min-width:160px;font-family:'DM Sans',sans-serif;}
+  .rt-slider{flex:1;-webkit-appearance:none;height:4px;border-radius:2px;background:rgba(201,146,42,0.3);outline:none;}
+  .rt-slider::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#C9922A;cursor:pointer;box-shadow:0 0 6px rgba(201,146,42,0.5);}
+  .rt-slider-val{min-width:28px;text-align:center;font-family:'JetBrains Mono',monospace;color:#E8B84B;font-weight:bold;font-size:15px;}
+  .rt-select{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.12);border-radius:6px;color:#FDFAF5;padding:8px 12px;font-size:13px;font-family:'DM Sans',sans-serif;width:100%;margin:6px 0;}
+  .rt-select option{background:#1B2A4A;}
+  .rt-radio-group{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0;}
+  .rt-radio-btn{padding:7px 14px;border-radius:6px;border:1px solid rgba(255,255,255,0.12);background:rgba(255,255,255,0.04);color:#ccc;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s;}
+  .rt-radio-btn.active{border-color:#C9922A;background:rgba(201,146,42,0.12);color:#E8B84B;}
+  .rt-dilemma-box{background:rgba(201,146,42,0.07);border:1px solid rgba(201,146,42,0.3);border-radius:12px;padding:20px;margin:16px 0;}
+  .rt-dilemma-text{font-size:15px;color:#FDFAF5;line-height:1.8;font-family:'DM Sans',sans-serif;}
+  .rt-dilemma-text strong{color:#E8B84B;}
+  .rt-choice-btns{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:16px 0;}
+  .rt-choice-btn{padding:16px;border-radius:10px;border:2px solid rgba(255,255,255,0.1);background:rgba(255,255,255,0.03);color:#FDFAF5;font-size:14px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500;transition:all 0.2s;text-align:center;line-height:1.5;}
+  .rt-choice-btn:hover{border-color:#C9922A;background:rgba(201,146,42,0.08);}
+  .rt-choice-btn.pull{border-color:#FF5252;}
+  .rt-choice-btn.pull:hover{background:rgba(255,82,82,0.1);}
+  .rt-choice-btn.nopull{border-color:#4CAF50;}
+  .rt-choice-btn.nopull:hover{background:rgba(76,175,80,0.1);}
+  .rt-choice-btn.selected-pull{border-color:#FF5252;background:rgba(255,82,82,0.12);}
+  .rt-choice-btn.selected-nopull{border-color:#4CAF50;background:rgba(76,175,80,0.12);}
+  .rt-consistency-box{border-radius:10px;padding:16px;margin:12px 0;font-size:14px;line-height:1.7;font-family:'DM Sans',sans-serif;}
+  .rt-consistency-box.consistent{background:rgba(76,175,80,0.1);border:1px solid #4CAF50;color:#81C784;}
+  .rt-consistency-box.inconsistent{background:rgba(255,152,0,0.1);border:1px solid #FF9800;color:#FFB74D;}
+  .rt-score-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:16px 0;}
+  .rt-score-card{background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:12px;text-align:center;}
+  .rt-score-num{font-size:26px;font-weight:bold;font-family:'Lora',serif;}
+  .rt-score-lbl{font-size:11px;color:#888;margin-top:2px;font-family:'DM Sans',sans-serif;}
+  .rt-progress{display:flex;gap:6px;justify-content:center;margin:10px 0;}
+  .rt-dot{width:10px;height:10px;border-radius:50%;background:rgba(255,255,255,0.15);}
+  .rt-dot.done-consistent{background:#4CAF50;}
+  .rt-dot.done-inconsistent{background:#FF9800;}
+  .rt-dot.current{background:#C9922A;box-shadow:0 0 6px #C9922A;}
+  .rt-textarea{width:100%;background:rgba(255,255,255,0.05);border:1px solid rgba(255,255,255,0.12);border-radius:8px;color:#FDFAF5;padding:10px 14px;font-size:13px;font-family:'DM Sans',sans-serif;resize:vertical;min-height:80px;box-sizing:border-box;}
+  .rt-textarea::placeholder{color:#555;}
+  .rt-tag{display:inline-block;padding:3px 10px;border-radius:20px;font-size:11px;font-family:'JetBrains Mono',monospace;margin:2px;}
+  .rt-next-btn{display:block;margin:16px auto 0;background:#C9922A!important;color:#1B2A4A!important;border:none!important;padding:11px 30px!important;border-radius:6px!important;font-weight:600!important;font-size:14px!important;cursor:pointer!important;font-family:'DM Sans',sans-serif!important;}
+</style>
+</head><body><div id="app"></div>
+<script>
+${FINISH_SCRIPT}
+
+// ── Relationship labels ───────────────────────────────────────────────
+const RELATIONSHIPS = ['strangers','colleagues','friends','family members','children','elderly people','public figures'];
+const FRAMINGS = ['You must decide whether to act.','There is no time to think.','You are the only one who can act.','Others are watching your decision.'];
+const JUSTIFICATIONS = ['Saving more lives is always right (utilitarian)','Taking direct action to harm is always wrong (deontological)','I would want others to do the same for me','The outcome matters more than the method','I cannot be responsible for what the trolley does naturally','Personal relationships should not affect moral decisions'];
+
+// ── Trial data ────────────────────────────────────────────────────────
+const NUM_ROUNDS = 4;
+let trialData = [];
+let roundIndex = 0;
+let scores = { consistent: 0, inconsistent: 0, utilitarian: 0, deontological: 0 };
+
+// ── Build dilemma text from parameters ───────────────────────────────
+function buildDilemmaText(params) {
+  const { mainTrack, sideTrack, mainRel, sideRel, framing, actionLabel } = params;
+  return \`A runaway trolley is heading toward <strong>\${mainTrack} \${mainRel}</strong> on the main track.
+  You can pull a lever to divert it to a side track, where it will strike <strong>\${sideTrack} \${sideRel}</strong>.
+  <em style="color:#aaa;font-size:13px">\${framing}</em>\`;
+}
+
+// ── SVG trolley diagram ───────────────────────────────────────────────
+function buildTrolleySVG(mainCount, sideCount, leverPulled) {
+  const mainColor = leverPulled ? '#4CAF50' : '#FF5252';
+  const sideColor = leverPulled ? '#FF5252' : '#888';
+  const figures = n => Array.from({length:n}, (_,i) =>
+    \`<g transform="translate(\${i*18},0)">
+      <circle cx="6" cy="4" r="4" fill="\${n>0?'#E8B84B':'#555'}"/>
+      <line x1="6" y1="8" x2="6" y2="20" stroke="\${n>0?'#E8B84B':'#555'}" stroke-width="2"/>
+      <line x1="6" y1="12" x2="0" y2="18" stroke="\${n>0?'#E8B84B':'#555'}" stroke-width="1.5"/>
+      <line x1="6" y1="12" x2="12" y2="18" stroke="\${n>0?'#E8B84B':'#555'}" stroke-width="1.5"/>
+    </g>\`
+  ).join('');
+  return \`<svg viewBox="0 0 520 180" style="width:100%;max-width:520px;display:block;margin:0 auto">
+    <!-- Main track -->
+    <line x1="40" y1="120" x2="480" y2="120" stroke="\${mainColor}" stroke-width="4" stroke-dasharray="\${leverPulled?'8,4':'none'}"/>
+    <!-- Side track fork -->
+    <path d="M200,120 Q230,120 250,80 L480,80" fill="none" stroke="\${sideColor}" stroke-width="3" stroke-dasharray="\${leverPulled?'none':'8,4'}"/>
+    <!-- Trolley -->
+    <rect x="80" y="98" width="60" height="32" rx="5" fill="#1B2A4A" stroke="#C9922A" stroke-width="2.5"/>
+    <rect x="88" y="103" width="16" height="12" rx="2" fill="#C9922A" opacity="0.4"/>
+    <rect x="110" y="103" width="16" height="12" rx="2" fill="#C9922A" opacity="0.4"/>
+    <circle cx="95" cy="132" r="6" fill="#888" stroke="#C9922A" stroke-width="1.5"/>
+    <circle cx="125" cy="132" r="6" fill="#888" stroke="#C9922A" stroke-width="1.5"/>
+    <text x="110" y="119" text-anchor="middle" fill="#E8B84B" font-size="9" font-family="JetBrains Mono">TROLLEY</text>
+    <!-- Arrow -->
+    <polygon points="155,116 175,120 155,124" fill="\${mainColor}" opacity="0.9"/>
+    <!-- Main track people -->
+    <g transform="translate(330,94)">\${figures(mainCount)}</g>
+    <!-- Side track people -->
+    <g transform="translate(330,54)">\${figures(sideCount)}</g>
+    <!-- Lever -->
+    <rect x="230" y="108" width="8" height="24" rx="3" fill="\${leverPulled?'#C9922A':'#555'}" transform="rotate(\${leverPulled?'-25':'0'},234,120)"/>
+    <circle cx="234" cy="107" r="5" fill="\${leverPulled?'#E8B84B':'#888'}"/>
+    <text x="234" y="148" text-anchor="middle" fill="#888" font-size="9" font-family="JetBrains Mono">LEVER</text>
+    <!-- Labels -->
+    <text x="370" y="92" text-anchor="middle" fill="\${mainColor}" font-size="11" font-family="DM Sans">\${mainCount} on main</text>
+    <text x="370" y="52" text-anchor="middle" fill="\${sideColor}" font-size="11" font-family="DM Sans">\${sideCount} on side</text>
+  </svg>\`;
+}
+
+// ── Phase 1: Design the dilemma ───────────────────────────────────────
+function renderDesignPhase() {
+  const app = document.getElementById('app');
+  let params = {
+    mainTrack: 5,
+    sideTrack: 1,
+    mainRel: 'strangers',
+    sideRel: 'strangers',
+    framing: FRAMINGS[0],
+    actionLabel: 'Pull the lever',
+    justification: '',
+    designChoice: null, // what the designer THINKS should be done
+  };
+
+  function draw() {
+    app.innerHTML = \`
+    <div class="rt-container">
+      <div style="text-align:center;margin-bottom:6px">
+        <span style="font-size:11px;color:#888;font-family:'JetBrains Mono',monospace">ROUND \${roundIndex+1} OF \${NUM_ROUNDS} &nbsp;|&nbsp; PHASE 1: DESIGN THE DILEMMA</span>
+      </div>
+      <div class="rt-progress">\${renderProgress()}</div>
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="font-size:36px">🚃</div>
+        <h2 style="margin:4px 0 2px">Design Your Trolley Problem</h2>
+        <p style="color:#aaa;font-size:13px;font-family:'DM Sans',sans-serif">You are the moral architect. Set the parameters of the dilemma — then face it yourself.</p>
+      </div>
+
+      <div class="rt-panel">
+        <h4>Track Configuration</h4>
+        <div class="rt-slider-row">
+          <label>People on main track</label>
+          <input type="range" class="rt-slider" min="1" max="10" value="\${params.mainTrack}" id="sl-main"/>
+          <div class="rt-slider-val" id="sv-main">\${params.mainTrack}</div>
+        </div>
+        <div class="rt-slider-row">
+          <label>People on side track</label>
+          <input type="range" class="rt-slider" min="1" max="10" value="\${params.sideTrack}" id="sl-side"/>
+          <div class="rt-slider-val" id="sv-side">\${params.sideTrack}</div>
+        </div>
+      </div>
+
+      <div class="rt-panel">
+        <h4>Relationships</h4>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div>
+            <div style="font-size:12px;color:#888;margin-bottom:4px;font-family:'DM Sans',sans-serif">Main track people are...</div>
+            <select class="rt-select" id="sel-main">\${RELATIONSHIPS.map(r=>\`<option value="\${r}" \${r===params.mainRel?'selected':''}>\${r}</option>\`).join('')}</select>
+          </div>
+          <div>
+            <div style="font-size:12px;color:#888;margin-bottom:4px;font-family:'DM Sans',sans-serif">Side track people are...</div>
+            <select class="rt-select" id="sel-side">\${RELATIONSHIPS.map(r=>\`<option value="\${r}" \${r===params.sideRel?'selected':''}>\${r}</option>\`).join('')}</select>
+          </div>
+        </div>
+      </div>
+
+      <div class="rt-panel">
+        <h4>Scenario Framing</h4>
+        <div class="rt-radio-group">
+          \${FRAMINGS.map(f=>\`<div class="rt-radio-btn \${f===params.framing?'active':''}" onclick="setFraming('\${f.replace(/'/g,'\\\\\\'')}')">"\${f}"</div>\`).join('')}
+        </div>
+      </div>
+
+      <div class="rt-panel">
+        <h4>Preview</h4>
+        \${buildTrolleySVG(params.mainTrack, params.sideTrack, false)}
+        <div class="rt-dilemma-box">
+          <p class="rt-dilemma-text">\${buildDilemmaText(params)}</p>
+        </div>
+        <div style="margin-top:10px">
+          <div style="font-size:12px;color:#888;margin-bottom:6px;font-family:'DM Sans',sans-serif">As the designer, what do you think the right action is?</div>
+          <div class="rt-choice-btns">
+            <div class="rt-choice-btn pull \${params.designChoice==='pull'?'selected-pull':''}" onclick="setDesignChoice('pull')">
+              🔴 Pull the lever<br><span style="font-size:12px;color:#aaa">Divert trolley to side track</span>
+            </div>
+            <div class="rt-choice-btn nopull \${params.designChoice==='nopull'?'selected-nopull':''}" onclick="setDesignChoice('nopull')">
+              🟢 Do nothing<br><span style="font-size:12px;color:#aaa">Let trolley continue</span>
+            </div>
+          </div>
+        </div>
+        <div style="margin-top:10px">
+          <div style="font-size:12px;color:#888;margin-bottom:4px;font-family:'DM Sans',sans-serif">Why? (optional)</div>
+          <textarea class="rt-textarea" id="justification-text" placeholder="Explain your moral reasoning...">\${params.justification}</textarea>
+        </div>
+      </div>
+
+      \${params.designChoice ? \`<button class="rt-next-btn" onclick="submitDesign()">Face Your Own Dilemma →</button>\` : ''}
+    </div>\`;
+
+    // Bind sliders
+    document.getElementById('sl-main').oninput = e => {
+      params.mainTrack = +e.target.value;
+      draw();
+    };
+    document.getElementById('sl-side').oninput = e => {
+      params.sideTrack = +e.target.value;
+      draw();
+    };
+    document.getElementById('sel-main').onchange = e => { params.mainRel = e.target.value; draw(); };
+    document.getElementById('sel-side').onchange = e => { params.sideRel = e.target.value; draw(); };
+  }
+
+  window.setFraming = f => { params.framing = f; draw(); };
+  window.setDesignChoice = c => { params.designChoice = c; draw(); };
+
+  window.submitDesign = () => {
+    params.justification = document.getElementById('justification-text').value;
+    renderFacePhase(params);
+  };
+
+  draw();
+}
+
+// ── Phase 2: Face your own dilemma ───────────────────────────────────
+function renderFacePhase(params) {
+  const app = document.getElementById('app');
+  let faceChoice = null;
+
+  function draw(choice) {
+    app.innerHTML = \`
+    <div class="rt-container">
+      <div style="text-align:center;margin-bottom:6px">
+        <span style="font-size:11px;color:#888;font-family:'JetBrains Mono',monospace">ROUND \${roundIndex+1} OF \${NUM_ROUNDS} &nbsp;|&nbsp; PHASE 2: FACE YOUR OWN DILEMMA</span>
+      </div>
+      <div class="rt-progress">\${renderProgress()}</div>
+      <div style="text-align:center;margin-bottom:12px">
+        <div style="font-size:36px">⚖️</div>
+        <h2 style="margin:4px 0 2px">Now You Must Decide</h2>
+        <p style="color:#aaa;font-size:13px;font-family:'DM Sans',sans-serif">This is the exact dilemma you designed. What do <em>you</em> actually do?</p>
+      </div>
+      \${buildTrolleySVG(params.mainTrack, params.sideTrack, choice === 'pull')}
+      <div class="rt-dilemma-box">
+        <p class="rt-dilemma-text">\${buildDilemmaText(params)}</p>
+      </div>
+      <div class="rt-choice-btns">
+        <div class="rt-choice-btn pull \${choice==='pull'?'selected-pull':''}" onclick="makeFaceChoice('pull')">
+          🔴 Pull the lever<br><span style="font-size:12px;color:#aaa">Divert to side track — \${params.sideTrack} \${params.sideRel} die</span>
+        </div>
+        <div class="rt-choice-btn nopull \${choice==='nopull'?'selected-nopull':''}" onclick="makeFaceChoice('nopull')">
+          🟢 Do nothing<br><span style="font-size:12px;color:#aaa">Stay on main track — \${params.mainTrack} \${params.mainRel} die</span>
+        </div>
+      </div>
+      \${choice ? \`<button class="rt-next-btn" onclick="submitFace()">See Analysis →</button>\` : ''}
+    </div>\`;
+  }
+
+  window.makeFaceChoice = c => { faceChoice = c; draw(c); };
+  window.submitFace = () => renderAnalysis(params, faceChoice);
+
+  draw(null);
+}
+
+// ── Phase 3: Consistency analysis ────────────────────────────────────
+function renderAnalysis(params, faceChoice) {
+  const isConsistent = params.designChoice === faceChoice;
+  const isPullDesign = params.designChoice === 'pull';
+  const isPullFace = faceChoice === 'pull';
+  const utilitarian = isPullFace; // pulling = saving more lives = utilitarian
+  const ratio = params.mainTrack / params.sideTrack;
+
+  if (isConsistent) scores.consistent++;
+  else scores.inconsistent++;
+  if (utilitarian) scores.utilitarian++;
+  else scores.deontological++;
+
+  trialData.push({
+    round: roundIndex + 1,
+    main_track_count: params.mainTrack,
+    side_track_count: params.sideTrack,
+    main_relationship: params.mainRel,
+    side_relationship: params.sideRel,
+    framing: params.framing,
+    design_choice: params.designChoice,
+    face_choice: faceChoice,
+    consistent: isConsistent,
+    utilitarian: utilitarian,
+    life_ratio: ratio.toFixed(2),
+    justification: params.justification,
+    task: 'reverse_trolley',
+  });
+
+  const app = document.getElementById('app');
+  app.innerHTML = \`
+  <div class="rt-container">
+    <div style="text-align:center;margin-bottom:6px">
+      <span style="font-size:11px;color:#888;font-family:'JetBrains Mono',monospace">ROUND \${roundIndex+1} OF \${NUM_ROUNDS} &nbsp;|&nbsp; PHASE 3: MORAL ANALYSIS</span>
+    </div>
+    <div class="rt-progress">\${renderProgress()}</div>
+
+    <div style="text-align:center;margin-bottom:12px">
+      <div style="font-size:36px">\${isConsistent ? '🎯' : '🔄'}</div>
+      <h2 style="margin:4px 0 2px">\${isConsistent ? 'Morally Consistent' : 'Moral Inconsistency Detected'}</h2>
+    </div>
+
+    <div class="rt-consistency-box \${isConsistent ? 'consistent' : 'inconsistent'}">
+      \${isConsistent
+        ? \`<strong>You acted consistently with your design.</strong> As the architect, you chose to \${params.designChoice === 'pull' ? 'pull the lever' : 'do nothing'} — and when faced with the same dilemma, you made the same choice. This suggests stable moral reasoning.\`
+        : \`<strong>Designer's Curse detected.</strong> You designed a dilemma where the "right" answer was to \${params.designChoice === 'pull' ? 'pull the lever' : 'do nothing'} — but when you faced it yourself, you chose to \${faceChoice === 'pull' ? 'pull the lever' : 'do nothing'}. This gap between designed intent and lived choice is a key finding in moral psychology.\`
+      }
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:12px 0">
+      <div class="rt-panel" style="text-align:center">
+        <div style="font-size:11px;color:#888;margin-bottom:4px;font-family:'JetBrains Mono',monospace">AS DESIGNER</div>
+        <div style="font-size:22px;font-weight:bold;font-family:'Lora',serif;color:\${isPullDesign?'#FF5252':'#4CAF50'}">\${isPullDesign ? '🔴 Pull lever' : '🟢 Do nothing'}</div>
+        <div style="font-size:12px;color:#888;margin-top:4px">\${isPullDesign ? 'Utilitarian — save more lives' : 'Deontological — no direct harm'}</div>
+      </div>
+      <div class="rt-panel" style="text-align:center">
+        <div style="font-size:11px;color:#888;margin-bottom:4px;font-family:'JetBrains Mono',monospace">AS PARTICIPANT</div>
+        <div style="font-size:22px;font-weight:bold;font-family:'Lora',serif;color:\${isPullFace?'#FF5252':'#4CAF50'}">\${isPullFace ? '🔴 Pull lever' : '🟢 Do nothing'}</div>
+        <div style="font-size:12px;color:#888;margin-top:4px">\${isPullFace ? 'Utilitarian — save more lives' : 'Deontological — no direct harm'}</div>
+      </div>
+    </div>
+
+    <div class="rt-panel">
+      <h4>Your Dilemma Parameters</h4>
+      <div style="display:flex;flex-wrap:wrap;gap:6px">
+        <span class="rt-tag" style="background:rgba(255,82,82,0.12);border:1px solid rgba(255,82,82,0.3);color:#FF8A80">\${params.mainTrack} on main (\${params.mainRel})</span>
+        <span class="rt-tag" style="background:rgba(76,175,80,0.12);border:1px solid rgba(76,175,80,0.3);color:#A5D6A7">\${params.sideTrack} on side (\${params.sideRel})</span>
+        <span class="rt-tag" style="background:rgba(201,146,42,0.12);border:1px solid rgba(201,146,42,0.3);color:#E8B84B">ratio \${ratio.toFixed(1)}:1</span>
+        <span class="rt-tag" style="background:rgba(33,150,243,0.12);border:1px solid rgba(33,150,243,0.3);color:#90CAF9">\${params.framing.slice(0,30)}...</span>
+      </div>
+      \${params.justification ? \`<div style="margin-top:10px;font-size:13px;color:#aaa;font-style:italic;line-height:1.6;font-family:'DM Sans',sans-serif">"<em>\${params.justification}</em>"</div>\` : ''}
+    </div>
+
+    <div class="rt-score-grid">
+      <div class="rt-score-card"><div class="rt-score-num" style="color:#4CAF50">\${scores.consistent}</div><div class="rt-score-lbl">Consistent</div></div>
+      <div class="rt-score-card"><div class="rt-score-num" style="color:#FF9800">\${scores.inconsistent}</div><div class="rt-score-lbl">Inconsistent</div></div>
+      <div class="rt-score-card"><div class="rt-score-num" style="color:#E8B84B">\${roundIndex+1}/\${NUM_ROUNDS}</div><div class="rt-score-lbl">Rounds Done</div></div>
+    </div>
+
+    <div style="text-align:center;margin-top:12px;display:flex;gap:10px;justify-content:center">
+      \${roundIndex + 1 < NUM_ROUNDS
+        ? \`<button class="rt-next-btn" onclick="nextRound()">Next Round →</button>\`
+        : \`<button class="rt-next-btn" onclick="showFinalResults()">See Final Results →</button>\`
+      }
+    </div>
+  </div>\`;
+}
+
+// ── Final results ─────────────────────────────────────────────────────
+function showFinalResults() {
+  const consistencyRate = Math.round((scores.consistent / NUM_ROUNDS) * 100);
+  const utilRate = Math.round((scores.utilitarian / NUM_ROUNDS) * 100);
+  const app = document.getElementById('app');
+  app.innerHTML = \`
+  <div class="rt-container" style="text-align:center">
+    <div style="font-size:48px;margin-bottom:12px">🚃</div>
+    <h2>Moral Profile Complete</h2>
+    <p style="color:#aaa;font-size:14px;line-height:1.7;max-width:480px;margin:0 auto 16px;font-family:'DM Sans',sans-serif">
+      Across \${NUM_ROUNDS} rounds, you designed and then faced your own moral dilemmas.
+    </p>
+    <div class="rt-score-grid" style="max-width:480px;margin:0 auto 16px">
+      <div class="rt-score-card"><div class="rt-score-num" style="color:#4CAF50">\${consistencyRate}%</div><div class="rt-score-lbl">Consistency</div></div>
+      <div class="rt-score-card"><div class="rt-score-num" style="color:#FF5252">\${utilRate}%</div><div class="rt-score-lbl">Utilitarian</div></div>
+      <div class="rt-score-card"><div class="rt-score-num" style="color:#9C27B0">\${100-utilRate}%</div><div class="rt-score-lbl">Deontological</div></div>
+    </div>
+    <div class="rt-panel" style="max-width:480px;margin:0 auto 16px;text-align:left">
+      <h4>What This Means</h4>
+      <p style="font-size:13px;color:#ccc;line-height:1.7;font-family:'DM Sans',sans-serif">
+        <strong style="color:#E8B84B">Consistency</strong> measures whether your designed intent matched your lived choice.
+        Low consistency suggests the <em>Designer's Curse</em> — we construct dilemmas that feel clear in the abstract but become emotionally charged when we inhabit them.
+        <br><br>
+        <strong style="color:#E8B84B">Utilitarian vs. Deontological</strong> reflects whether you prioritized outcomes (saving more lives) or rules (not directly causing harm).
+        Most people shift between frameworks depending on the framing — a key finding in moral psychology research (Foot, 1967; Thomson, 1985).
+      </p>
+    </div>
+    <button class="jspsych-btn" onclick="window.parent.postMessage({type:'jspsych-done',data:trialData},'*')">View Trial Data →</button>
+  </div>\`;
+}
+
+function renderProgress() {
+  return Array.from({length:NUM_ROUNDS}, (_,i) => {
+    let cls = 'rt-dot';
+    if (i < roundIndex) cls += trialData[i]?.consistent ? ' done-consistent' : ' done-inconsistent';
+    else if (i === roundIndex) cls += ' current';
+    return \`<div class="\${cls}"></div>\`;
+  }).join('');
+}
+
+window.nextRound = function() {
+  roundIndex++;
+  renderDesignPhase();
+};
+
+// Start
+renderDesignPhase();
+</script></body></html>`;
+}

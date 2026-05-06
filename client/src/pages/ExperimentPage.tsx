@@ -14,7 +14,7 @@ import {
   buildTuringHTML,
   buildSurveyHTML,
   buildReverseHangmanHTML,
-  buildReversePulleyHTML,
+  buildReverseTrolleyHTML,
 } from "@/lib/experiments";
 
 const EXPERIMENT_BG =
@@ -28,7 +28,7 @@ type ExperimentId =
   | "turing"
   | "survey"
   | "reverse-hangman"
-  | "reverse-pulley";
+  | "reverse-trolley";
 
 type RunMode = "idle" | "running" | "done";
 
@@ -50,7 +50,7 @@ const EXPERIMENTS: ExperimentMeta[] = [
   { id: "turing", label: "Turing Test", icon: "🤖", desc: "Human vs. AI response discrimination", plugin: "html-button-response", color: "#2196F3", category: "AI & Cognition" },
   { id: "reverse-hangman", label: "Reverse Hangman", icon: "🎭", desc: "Give letters to confuse the AI guesser", plugin: "custom DOM + strategy", color: "#FF5722", category: "AI & Cognition" },
   { id: "survey", label: "Psychology Survey", icon: "📋", desc: "Likert scales + multiple choice", plugin: "survey-likert + survey-multi-choice", color: "#C9922A", category: "Survey" },
-  { id: "reverse-pulley", label: "Reverse Pulley", icon: "⚙️", desc: "Reconstruct a pulley system from a force ratio", plugin: "custom DOM + causal reasoning", color: "#00BCD4", category: "Reasoning" },
+  { id: "reverse-trolley", label: "Reverse Trolley", icon: "🚃", desc: "Design a moral dilemma, then face it yourself", plugin: "custom DOM + moral reasoning", color: "#7C4DFF", category: "Reasoning" },
 ];
 
 function buildHTML(id: ExperimentId): string {
@@ -62,7 +62,7 @@ function buildHTML(id: ExperimentId): string {
     case "turing": return buildTuringHTML();
     case "survey": return buildSurveyHTML();
     case "reverse-hangman": return buildReverseHangmanHTML();
-    case "reverse-pulley": return buildReversePulleyHTML();
+    case "reverse-trolley": return buildReverseTrolleyHTML();
   }
 }
 
