@@ -13,6 +13,8 @@ import {
   buildPhantomLimbHTML,
   buildTuringHTML,
   buildSurveyHTML,
+  buildReverseHangmanHTML,
+  buildReversePulleyHTML,
 } from "@/lib/experiments";
 
 const EXPERIMENT_BG =
@@ -24,7 +26,9 @@ type ExperimentId =
   | "nback"
   | "phantom"
   | "turing"
-  | "survey";
+  | "survey"
+  | "reverse-hangman"
+  | "reverse-pulley";
 
 type RunMode = "idle" | "running" | "done";
 
@@ -44,7 +48,9 @@ const EXPERIMENTS: ExperimentMeta[] = [
   { id: "nback", label: "2-Back Memory", icon: "🧠", desc: "Working memory capacity", plugin: "html-keyboard-response", color: "#9C27B0", category: "Cognitive" },
   { id: "phantom", label: "Phantom Limb / RHI", icon: "🖐️", desc: "Rubber Hand Illusion & body ownership", plugin: "survey-likert + button-response", color: "#E91E63", category: "Perception" },
   { id: "turing", label: "Turing Test", icon: "🤖", desc: "Human vs. AI response discrimination", plugin: "html-button-response", color: "#2196F3", category: "AI & Cognition" },
+  { id: "reverse-hangman", label: "Reverse Hangman", icon: "🎭", desc: "Give letters to confuse the AI guesser", plugin: "custom DOM + strategy", color: "#FF5722", category: "AI & Cognition" },
   { id: "survey", label: "Psychology Survey", icon: "📋", desc: "Likert scales + multiple choice", plugin: "survey-likert + survey-multi-choice", color: "#C9922A", category: "Survey" },
+  { id: "reverse-pulley", label: "Reverse Pulley", icon: "⚙️", desc: "Reconstruct a pulley system from a force ratio", plugin: "custom DOM + causal reasoning", color: "#00BCD4", category: "Reasoning" },
 ];
 
 function buildHTML(id: ExperimentId): string {
@@ -55,6 +61,8 @@ function buildHTML(id: ExperimentId): string {
     case "phantom": return buildPhantomLimbHTML();
     case "turing": return buildTuringHTML();
     case "survey": return buildSurveyHTML();
+    case "reverse-hangman": return buildReverseHangmanHTML();
+    case "reverse-pulley": return buildReversePulleyHTML();
   }
 }
 
